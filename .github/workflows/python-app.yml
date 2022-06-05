@@ -38,5 +38,5 @@ jobs:
           jksb_send_type: ${{ secrets.send_type }}
           jksb_send_parameter: ${{ secrets.send_parameter }}
       run: |
-        RUN sed -i -E 's/MinProtocol[=\ ]+.*/MinProtocol = TLSv1.0/g' /etc/ssl/openssl.cnf
+        sed -i -E 's/MinProtocol[=\ ]+.*/MinProtocol = TLSv1.0/g' /etc/ssl/openssl.cnf
         python jksb.py
