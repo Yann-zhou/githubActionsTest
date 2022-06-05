@@ -3,7 +3,7 @@ name: Start jksb
 on:
   workflow_dispatch:
   schedule:
-    - cron: '6 16,17,19 * * *'
+    - cron: '17 16,17,19 * * *'
 #   [push]
 
 # permissions:
@@ -38,5 +38,4 @@ jobs:
           jksb_send_type: ${{ secrets.send_type }}
           jksb_send_parameter: ${{ secrets.send_parameter }}
       run: |
-#        sed -i -E 's/MinProtocol[=\ ]+.*/MinProtocol = TLSv1.0/g' /etc/ssl/openssl.cnf
         python jksb.py
