@@ -3,7 +3,7 @@ name: Start jksb
 on:
   workflow_dispatch:
   schedule:
-    - cron: '6 15,16,17 * * *'
+    - cron: '6 16,17,19 * * *'
 #   [push]
 
 # permissions:
