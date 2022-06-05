@@ -31,7 +31,7 @@ def get_signin_status():
             r = requests.post(url=url_login, data=data_login, headers=header, verify=False)
         except TypeError as err:
             logger.error("获取打卡状态时出错：登录页面ssl错误，5秒后重试...")
-            print(err)
+            print(str(err))
             loop_time -= 1
             sleep(5)
             continue
@@ -48,7 +48,7 @@ def get_signin_status():
             r = requests.get(url='https://jksb.v.zzu.edu.cn/vls6sss/zzujksb.dll/jksb?ptopid='+ptopid+'&sid='+sid+'&fun2=')
         except TypeError as err:
             logger.error("获取打卡状态时出错：打卡信息页面ssl错误，5秒后重试...")
-            print(err)
+            print(str(err))
             loop_time -= 1
             sleep(5)
             continue
