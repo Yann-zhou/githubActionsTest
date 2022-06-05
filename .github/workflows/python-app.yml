@@ -27,15 +27,15 @@ jobs:
 #         mail_id: ${{secrets.mail_id}}
 #         mail_pd: ${{secrets.mail_pd}}
 #         processing_pool: ${{secrets.processing_pool}}
-          jksb_username: '20212233'
-          jksb_password: 'aaa'
-          jksb_code_province: '41'
-          jksb_code_city: '4101'
-          jksb_location: 'zz0'
-          jksb_vaccine: '5'
-          jksb_jingdu: '111'
-          jksb_weidu: '30'
-          jksb_send_type: 'bark'
-          jksb_send_parameter: '111'
+          jksb_username: ${{secrets.username}}
+          jksb_password: ${{secrets.password}}
+          jksb_code_province: ${{secrets.province}}
+          jksb_code_city: ${{secrets.city}}
+          jksb_location: ${{secrets.location}}
+          jksb_vaccine: ${{secrets.vaccine}}
+          jksb_jingdu: ${{secrets.jingdu}}
+          jksb_weidu: ${{secrets.weidu}}
+          jksb_send_type: ${{secrets.send_type}}
+          jksb_send_parameter: ${{secrets.send_parameter}}
       run: |
         python jksb.py
