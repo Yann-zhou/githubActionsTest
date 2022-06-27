@@ -1,4 +1,6 @@
 import requests
+import urllib3
+from ssl import PROTOCOL_TLSv1_2
 import re
 from time import sleep
 from get_parameter import *
@@ -9,59 +11,44 @@ import smtplib
 from email.mime.text import MIMEText
 from email.header import Header
 from urllib.parse import quote
+from urllib.parse import urlencode
 
 logging.basicConfig(level=logger_level, format='%(asctime)s - %(name)s - [%(levelname)s] - %(message)s')
 logger = logging.getLogger('jksb_tools')
-requests.packages.urllib3.disable_warnings(requests.packages.urllib3.exceptions)
+urllib3.disable_warnings()
+http = urllib3.PoolManager(cert_reqs='CERT_NONE', ssl_version=PROTOCOL_TLSv1_2)
+# requests.packages.urllib3.disable_warnings(requests.packages.urllib3.exceptions)
 # requests.packages.urllib3.util.ssl_.DEFAULT_CIPHERS = 'DEFAULT:@SECLEVEL=1'
 
 
 # 获取打卡状态的方法
 def get_signin_status():
-    loop_time = 6
-    while loop_time > 0:
-        data_login = {
-            'uid': username,  # 此处填学号
-            'upw': password,  # 此处填密码
-            'smbtn': '进入健康状况上报平台',
-            'hh28': '937'     # 该参数作用未知，保持默认值不变
-        }
-        sleep(3)
-        try:
-            r = requests.post(url=url_login, data=data_login, headers=header, verify=False)
-        except TypeError as err:
-            logger.error("获取打卡状态时出错：登录页面ssl错误，120秒后重试...")
-            print(str(err))
-            loop_time -= 1
-            sleep(120)
-            continue
-        logger.debug("检查打卡状态模块：已获取login页返回值")
-        try:
-            ptopid = re.search('(?<=ptopid=).*?(?=&)', r.content.decode()).group()
-            sid = re.search('(?<=sid=).*?(?=")', r.content.decode()).group()
-        except TypeError:
-            logger.error("获取打卡状态时出错：login的response中无ptopid或sid")
-        except AttributeError:
-            logger.error("获取打卡状态时出错：login的response中无ptopid或sid")
-        sleep(3)
-        try:
-            r = requests.get(url='https://jksb.v.zzu.edu.cn/vls6sss/zzujksb.dll/jksb?ptopid='+ptopid+'&sid='+sid+'&fun2=')
-        except TypeError as err:
-            logger.error("获取打卡状态时出错：打卡信息页面ssl错误，120秒后重试...")
-            print(str(err))
-            loop_time -= 1
-            sleep(120)
-            continue
-        logger.debug("检查打卡状态模块：jksb页面返回值：ptopid="+ptopid+", sid="+sid)
-        # 计算返回网页中对号的数量，为8则打卡成功，其他情况均未打卡成功
-        if r.content.decode().count('ok2020.png') == 8:
-            logger.info("打卡状态：已打卡")
-            return [True, r.content.decode()]
-        else:
-            logger.info("打卡状态：未打卡")
-            return [False, r.content.decode()]
-    if loop_time == 0:
-        raise Exception("获取打卡状态时多次遭遇ssl错误！")
+    data_login = {
+        'uid': username,  # 此处填学号
+        'upw': password,  # 此处填密码
+        'smbtn': '进入健康状况上报平台',
+        'hh28': '937'     # 该参数作用未知，保持默认值不变
+    }
+    sleep(3)
+    r = http.request(method='POST', url=url_login, body=urlencode(data_login), headers=header)
+    # r = requests.post(url=url_login, data=data_login, headers=header, verify=False)
+    logger.debug("检查打卡状态模块：已获取login页返回值")
+    try:
+        ptopid = re.search('(?<=ptopid=).*?(?=&)', r.data.decode()).group()
+        sid = re.search('(?<=sid=).*?(?=")', r.data.decode()).group()
+    except TypeError:
+        logger.error("获取打卡状态时出错：login的response中无ptopid或sid")
+    sleep(3)
+    r = http.request(method='GET', url='https://jksb.v.zzu.edu.cn/vls6sss/zzujksb.dll/jksb?ptopid='+ptopid+'&sid='+sid+'&fun2=', headers=header)
+    # r = requests.get(url='https://jksb.v.zzu.edu.cn/vls6sss/zzujksb.dll/jksb?ptopid='+ptopid+'&sid='+sid+'&fun2=')
+    logger.debug("检查打卡状态模块：jksb页面返回值：ptopid="+ptopid+", sid="+sid)
+    # 计算返回网页中对号的数量，为8则打卡成功，其他情况均未打卡成功
+    if r.data.decode().count('ok2020.png') == 8:
+        logger.info("打卡状态：已打卡")
+        return [True, r.data.decode()]
+    else:
+        logger.info("打卡状态：未打卡")
+        return [False, r.data.decode()]
 
 
 # 获取郑好办核酸检测信息的方法
@@ -105,13 +92,13 @@ def get_zhb_status():
 def send_message(message: str):
     if send_type == 'bark':
         if send_parameter[-1] != '/':
-            requests.get(send_parameter + '/健康打卡/' + message)
+            http.request(method='GET', url=send_parameter + '/健康打卡/' + message)
         else:
-            requests.get(send_parameter + '健康打卡/' + message)
+            http.request(method='GET', url=send_parameter + '健康打卡/' + message)
         logger.info("已使用"+send_type+"模式发送消息“"+message+"”")
 
     elif send_type == 'serverchan':
-        requests.get('https://sctapi.ftqq.com/' + send_parameter + '.send?title=' + quote(message))
+        http.request(method='GET', url='https://sctapi.ftqq.com/' + send_parameter + '.send?title=' + quote(message))
         logger.info("已使用"+send_type+"模式发送消息“"+message+"”")
 
     elif send_type == 'email':
